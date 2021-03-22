@@ -28,11 +28,16 @@ class main():
         self.win.show()
         self.canvasHandler = canvasHandler(self, self.win, self.win.ui.label, self.player)
         self.canvasHandler.frameSignal.connect(self.win.display_video)
-        self.crossing_detector = crossing_detector()
+
+        """
+        初始化電子圍籬 並且將繪製好的區域加入
+        下一步見 ./ui_controller/view.py 的 display_video()
+        """
+        self.crossing_detector = crossing_detector("A")
         ok, area = load_json('./area.txt')
-        self.crossing_detector.add_area(area)
-        ok, area = load_json('./area_2.txt')
-        self.crossing_detector.add_area(area)
+        self.crossing_detector.add_area_dict(area)
+        ok, area = load_json('./area2.txt')
+        self.crossing_detector.add_area_dict(area)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -71,5 +71,5 @@ class main_form(QtWidgets.QWidget):
         self.label_2.setText(_translate("Form", "RTSP:"))
         self.connect_rtsp_btn.setText(_translate("Form", "連接"))
         self.save_area_btn.setText(_translate("Form", "儲存"))
-        self.rtsp_edit.setText('')
+        self.rtsp_edit.setText('rtsp://192.168.1.201:554/user=admin_password=tlJwpbo6_channel=1_stream=0.sdp?real_stream')
 

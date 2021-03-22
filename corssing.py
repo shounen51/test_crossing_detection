@@ -2,6 +2,7 @@ import time
 import datetime
 import sys
 import json
+import copy
 
 import cv2
 import numpy as np
@@ -28,6 +29,7 @@ def _check_week(week):
 
 class area():
     def __init__(self, areaDict):
+        self._dict = areaDict
         self.type = areaDict['alertType']
         self.ab = areaDict['area']['abs']
         self.points = areaDict['area']['points']
@@ -93,15 +95,38 @@ class area():
             B,G,R = int(a[0,0,0]),int(a[0,0,1]),int(a[0,0,2])
             return (B,G,R)
 
+    def get_dict(self):
+        return self._dict
+
 
 class crossing_detector():
-    def __init__(self):
+    def __init__(self, cam_name:str="cam_name"):
+        self.name = cam_name
         self.areaDict = {}
 
     def get_area_dict(self):
         return self.areaDict
 
-    def add_area(self, _dict):
+    def add_area_list(self, areaName:str, Npoints:list, alertType:str, day:str, hour:str, sec:str):
+        _area_dict = {'cam': self.name, 'areaName': areaName, 'area': {"abs": [], "points": []}, 'alertType': alertType, 'day': day, 'hour': hour, 'sec': sec}
+        _abs = []
+        Npoints.append(Npoints[0])
+        for i in range(len(Npoints)-1):
+            x1,y1 = Npoints[i]
+            x2,y2 = Npoints[i+1]
+            if x1-x2 == 0:
+                a = float('inf')
+                b = 0
+            else:
+                a = round((y1-y2)/(x1-x2),3)
+                b = round(y1 - x1*a,3)
+            _abs.append((a,b))
+        Npoints.pop()
+        _area_dict['area'] = {'abs': _abs, 'points': Npoints}
+        _area = area(_area_dict)
+        self.areaDict[_area_dict["areaName"]] = _area
+
+    def add_area_dict(self, _dict):
         _area = area(_dict)
         if _dict["areaName"] == "": _dict["areaName"] = str(len(self.areaDict))
         self.areaDict[_dict["areaName"]] = _area
@@ -116,15 +141,17 @@ class crossing_detector():
         cxdyty[:,2] = bbox_xyxy[:,1]
         return cxdyty
 
-
-
-    def detector(self, bbox_xyxy):
+    def detector(self, ori_bbox_xyxy, size:tuple=(1,1)):
+        bbox_xyxy = copy.copy(ori_bbox_xyxy)
+        bbox_xyxy = bbox_xyxy.astype(np.float)
         trackThem = np.zeros([], dtype=bool)
         if len(bbox_xyxy) == 0:
             for aindex, areaName in enumerate(self.areaDict):
                 area = self.areaDict[areaName]
                 area.safe()
             return []
+        bbox_xyxy[:,0::2] = bbox_xyxy[:,0::2] / size[0]
+        bbox_xyxy[:,1::2] = bbox_xyxy[:,1::2] / size[1]
         bboxes = self._bbox2cxdyty(bbox_xyxy)
         temp = np.zeros([bboxes.shape[0],len(self.areaDict)], dtype=bool)
         trackThem = np.zeros([bboxes.shape[0],len(self.areaDict)], dtype=bool)
@@ -156,13 +183,17 @@ class crossing_detector():
                 alarmType = area.type
         return trackThem
 
+    def save_area(self, path, area_name):
+        save_json(path, self.areaDict[area_name].get_dict())
+
     def draw_area(self, img):
+        size = img.shape
         for areaName in self.areaDict:
             area = self.areaDict[areaName]
             for index, point in enumerate(area.points):
                 index -= len(area.points)
-                p1 = (point[0], point[1])
-                p2 = (area.points[index+1][0], area.points[index+1][1])
+                p1 = (int(point[0]*size[1]), int(point[1]*size[0]))
+                p2 = (int(area.points[index+1][0]*size[1]), int(area.points[index+1][1]*size[0]))
                 cv2.line(img, p1, p2, area.get_color(),3)
         return img
 
@@ -185,6 +216,14 @@ def is_point_in_here(temp, aindex, area, bboxes, td):
         _mask = np.logical_and(_mask, _mask3)
         temp[:,aindex] = np.logical_xor(temp[:,aindex], _mask)
     return temp
+
+def save_json(path, _dict):
+    try:
+        with open(path, "w", encoding="utf-8") as file:
+            json.dump(_dict, file, indent=4, ensure_ascii=False)
+        return True
+    except:
+        return False
 
 if __name__ == "__main__":
     areaSetList=[{

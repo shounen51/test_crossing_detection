@@ -39,6 +39,9 @@ class main_window(QMainWindow):
             cv2.rectangle(frame, points[0], points[1], color, 2)
             for p in points:
                 cv2.putText(frame, '(' + str(p[0]) + ',' + str(p[1]) + ')', p, cv2.FONT_HERSHEY_PLAIN, 2, (255,0,0), 2)
+        """
+        將點轉換成框並且丟到電子圍籬
+        """
         self.crossing(points, size)
         width, height = size
         bytesPerComponent = 3
@@ -49,12 +52,16 @@ class main_window(QMainWindow):
 
     def crossing(self, points, size):
         if len(points) == 2:
-            points = normalize_points(points, size)
+            # box必須轉換成1920*1080的大小，所以要做一次resize
+            # points = normalize_points(points, size)
+
+            # 把points轉換成xyxy格式的box
             boxes = [[points[0][0], points[0][1], points[1][0], points[1][1]]]
             boxes = np.array(boxes)
         else:
             boxes = np.array([])
-        ids = self.main.crossing_detector.detector(boxes)
+        # 把box的list丟到crossing_detector的detector，回傳就會是對應的bool
+        ids = self.main.crossing_detector.detector(boxes, size)
         print(ids)
 
 
