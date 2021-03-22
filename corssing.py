@@ -226,19 +226,57 @@ def save_json(path, _dict):
         return False
 
 if __name__ == "__main__":
-    areaSetList=[{
-        'area' : {"abs": [[0.009, 756.872], [3.08, -3634.4], [0.001, 1076.47], [-3.33, 3401.34]], "points": [[792, 764], [1430, 770], [1530, 1078], [698, 1077]]},
-        'alertType' : '0',
-        'areaName':'test',
-        'day':'1111111',
-        'hour':'0,24',
-        'sec':'2',
-        'cam':'52'
-    }]
+    areaSetDict={
+    "cam": "cam0",
+    "areaName": "AAA",
+    "area": {
+        "abs": [
+            [
+                0.372,
+                0.059
+            ],
+            [
+                -8.087,
+                7.469
+            ],
+            [
+                0.457,
+                0.349
+            ],
+            [
+                -2.482,
+                2.218
+            ]
+        ],
+        "points": [
+            [
+                0.7564814814814815,
+                0.34074074074074073
+            ],
+            [
+                0.8759259259259259,
+                0.3851851851851852
+            ],
+            [
+                0.8333333333333334,
+                0.7296296296296296
+            ],
+            [
+                0.6361111111111111,
+                0.6395061728395062
+            ]
+        ]
+    },
+    "alertType": "1",
+    "day": "1111111",
+    "hour": "0,24",
+    "sec": "3"
+}
     detector = crossing_detector()
-    bbox_xyxy_list = [np.array([[932,970,1230,971]])]
+    detector.add_area_dict(areaSetDict)
+    bbox_xyxy_list = np.array([[760,234,867,454],[760,234,867,454]])
     while 1:
-        returnList = detector.detector([0],bbox_xyxy_list)
+        returnList = detector.detector(bbox_xyxy_list,(1080,810))
         print(returnList)
         print('--------------------')
         time.sleep(0.5)
